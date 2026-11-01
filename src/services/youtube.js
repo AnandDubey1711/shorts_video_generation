@@ -39,7 +39,7 @@ export async function upload(reel) {
       status: {
         privacyStatus: process.env.YT_PRIVACY,
         selfDeclaredMadeForKids: false,
-        containsSyntheticMedia: process.env.SYNTHETIC,
+        containsSyntheticMedia: Boolean(process.env.SYNTHETIC),
       },
     },
     media: { body: fs.createReadStream(reel.video_path) },
