@@ -7,7 +7,11 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "migrate": "knex migrate:latest",
-    "setup": "bash setup.sh"
+    "setup": "bash setup.sh",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:restart": "pm2 restart shorts-video-generation",
+    "pm2:stop": "pm2 stop shorts-video-generation",
+    "pm2:logs": "pm2 logs shorts-video-generation"
   },
   "author": "",
   "license": "ISC",

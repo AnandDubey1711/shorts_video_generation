@@ -17,12 +17,13 @@ app.use(cors());
 app.use(express.json());
 app.use(routes);
 
-log('startup', `llm ${process.env.OLLAMA_MODEL}, tts ${process.env.KOKORO_URL}, stories from ${process.env.REDDIT_MOCK_FILE || process.env.ARCTIC_SHIFT_URL}, daily fetch "${process.env.FETCH_CRON}"`);
+log('startup', `llm ${process.env.OLLAMA_MODEL}, tts ${process.env.KOKORO_URL}, stories from ${process.env.REDDIT_MOCK_FILE || process.env.ARCTIC_SHIFT_URL}, no scheduled fetch - trigger with POST /reels/fetch`);
 // checked before the worker starts, so anything 'processing' here was cut off by a previous stop or restart
 const stuck = await db('reels').where({ status: 'processing' }).pluck('id');
 for (const id of stuck) log('startup', `reel ${id} was left mid-way by the last run - if it doesn't show up below, re-queue it with POST /reels/${id}/retry`);
 
 startWorker();
-queue.upsertJobScheduler('fetch', { pattern: process.env.FETCH_CRON }, { name: 'fetch' });
+// the daily fetch cron is disabled; this clears any scheduler a previous run left in redis so it stops firing
+await queue.removeJobScheduler('fetch');
 
 app.listen(process.env.PORT, () => log('startup', `listening on http://localhost:${process.env.PORT}`));
