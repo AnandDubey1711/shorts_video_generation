@@ -1,0 +1,9 @@
+node_modules
+.env
+youtube-token.json
+# media
+.claude/settings.local.json
+logs
+
+.claude
+youtube-token.json
