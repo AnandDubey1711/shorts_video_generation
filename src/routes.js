@@ -24,6 +24,15 @@ router.post('/reels/fetch', async (req, res) => {
   res.json({ queued: job.id });
 });
 
+router.post("/reels/fetch/custom_job", async(req,res)=>{
+    const {title, story} = req.body;
+    if(!title || !story){
+      res.status(400).json({"data":"title or story is missing"});
+    }
+    const job = await queue.add('fetch', {title, story});
+    res.json({ queued: job.id });
+});
+
 router.post('/reels/:id/retry', async (req, res) => {
   const updated = await db('reels').where({ id: req.params.id }).update({ status: 'pending' });
   if (!updated) return res.status(404).json({ error: 'not found' });

@@ -48,7 +48,8 @@ async function refill(needed) {
   return added;
 }
 
-async function fetchStories() {
+async function fetchStories(title = "", story = "") {
+if (!title && !story) {
   const cohort = Number(process.env.STORIES_PER_FETCH);
   const available = Number((await db('stories').whereNull('picked_at').count({ n: '*' }).first()).n);
   log('fetch', `${available} unpicked stories in the pool, cohort of ${cohort} (STORIES_PER_FETCH)`);
@@ -69,6 +70,58 @@ async function fetchStories() {
   await queue.addBulk(rows.map((row) => ({ name: 'produce', data: { id: row.id } })));
   for (const row of rows) log(reelTag(row.id), `queued (full id ${row.id})`);
   return { added: rows.length };
+} else {
+  let added = null;
+  added = await customStoryInsertion(title, story);
+  return added;
+}
+}
+
+function pKeyGen() {
+  let arr = [];
+  let arr2 = [];
+  let str = "";
+  for (let i = 65; i < 91; i++) {
+    arr.push(String.fromCharCode(i));
+    arr2.push(i);;
+  }
+
+  for (let i = 0; i < 3; i++) {
+    str += arr2[Math.floor(Math.random() * 10)]
+    let ch = arr[Math.floor(Math.random() * 10)]
+    ch = Math.random() < 0.5 ? ch.toLowerCase() : ch.toUpperCase()
+    str += ch;
+  }
+
+  return str;
+}
+
+async function customStoryInsertion(title, story) {
+  try {
+    if (!title || !story) {
+      return;
+    }
+
+    const row = await db.transaction(async (trx) => {
+      const max_id = await trx("stories").max("id").first();
+      const nextId = Number(max_id.max ?? Math.floor(Math.random()*10e9)) + 1;
+      const pKey = pKeyGen();
+        const entryItem = { "id": nextId + 1, source: "custom", "source_id": pKey, subreddit: "AmItheAsshole", "original_title": title, "original_text": story, "score": Number(Math.random().toFixed(1))*10+1, "created_utc": Math.floor(Date.now() / 1000) };
+
+        await trx("stories").insert(entryItem).onConflict(['source', 'source_id']).ignore().returning('id');
+        
+        const reelEntryItem = { source: "custom", "source_id": pKey, "original_title": title, "original_text": story };
+
+        return trx("reels").insert(reelEntryItem).onConflict(["source", "source_id"]).ignore().returning("id")
+    })
+    const [jobId] = row;
+    if(jobId.id){
+      const job = await queue.add('produce', { id: jobId.id });
+    }
+    return { "added": jobId.id ? 1: 0 }
+  } catch (error) {
+    console.log("Something went wrong", error);
+  }
 }
 
 async function produce(id) {
@@ -97,7 +150,7 @@ async function produce(id) {
 }
 
 export function startWorker() {
-  const worker = new Worker('reels', (job) => (job.name === 'fetch' ? fetchStories() : produce(job.data.id)), {
+  const worker = new Worker('reels', (job) => (job.name === 'fetch' ? fetchStories(job?.data?.title, job?.data?.story) : produce(job.data.id)), {
     connection,
     concurrency: 1,
   });
