@@ -22,7 +22,7 @@ apt_install() {
   sudo apt-get install -y "$@"
 }
 
-[[ -f .env ]] || { cp .env.example .env; echo "created .env from .env.example - fill in the secrets"; }
+[[ -f .env ]] || { cp .env.development .env; echo "created .env from .env.development - fill in the secrets"; }
 
 step "System tools"
 missing=()  
