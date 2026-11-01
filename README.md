@@ -1,4 +1,4 @@
-# reel_generator
+# Reels/TikTok/Shorts Generation
 
 > Turning strangers' Reddit drama into vertical videos with a robot voice over Minecraft-parkour-style footage, because apparently that's what the internet wants now.
 
